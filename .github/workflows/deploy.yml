@@ -19,10 +19,10 @@ env:
   fe_web_dockerfile: ./apps/web/Dockerfile
 
   fe_backoffice_repository: T-T-Software-Solution/ttss-fe-mono
-  fe_backoffice_branch: main
+  fe_backoffice_branch: feature/edit-inline-table.dockerfile
   fe_backoffice_image_name: ttss-be
   fe_backoffice_image_tag: latest
-  fe_backoffice_working_dir: ./apps/backoffice
+  fe_backoffice_working_dir: .
   fe_backoffice_dockerfile: ./apps/backoffice/Dockerfile
   
   be_repository: T-T-Software-Solution/meowmeow-be
@@ -45,8 +45,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with: 
-          repo: ${{ env.fe_web_repository }}
-          ref: ${{ env.fe_web_branch }}
+          repository: ${{ env.fe_backoffice_repository }}
+          ref: ${{ env.fe_backoffice_branch }}
+          token: ${{ secrets.GH_TOKEN_THADA_TTSS }}
 
       # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
@@ -57,8 +58,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish docker image
-        working-directory: ${{ env.fe_web_working_dir }}
+        working-directory: ${{ env.fe_backoffice_working_dir }}
         shell: bash
         run: |
-          docker build -t ${{ env.fe_web_image_name }}:${{ env.fe_web_image_tag }} -f ${{ env.fe_web_dockerfile }} .
-          docker push ${{ env.fe_web_image_name }}:${{ env.fe_web_image_tag }}
+          docker build -t ${{ env.REGISTRY }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
+          docker push ${{ env.REGISTRY }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
