@@ -8,7 +8,9 @@ on:
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
-  REGISTRY: ghcr.io
+  container_registry_server: easyinsuredev.azurecr.io
+  container_registry_username: easyinsuredev
+  container_registry_password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
   IMAGE_NAME: ${{ github.repository }}
 
   fe_web_repository: T-T-Software-Solution/ttss-fe-mono
@@ -53,13 +55,13 @@ jobs:
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.container_registry_server }}
+          username: ${{ env.container_registry_username }}
+          password: ${{ env.container_registry_password }}
 
       - name: Build and publish docker image
         working-directory: ${{ env.fe_backoffice_working_dir }}
         shell: bash
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
-          docker push ${{ env.REGISTRY }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
+          docker build -t ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
+          docker push ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
