@@ -8,8 +8,8 @@ on:
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
-  container_registry_server: easyinsuredev.azurecr.io
-  container_registry_username: easyinsuredev
+  container_registry_server: ${{ vars.ACR_SERVER_NAME }}.azurecr.io
+  container_registry_username: ${{ vars.ACR_SERVER_NAME }}
   container_registry_password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
   IMAGE_NAME: ${{ github.repository }}
 
@@ -66,3 +66,14 @@ jobs:
         run: |
           docker build --build-arg PROJECT_DIR=${{ env.fe_backoffice_project_dir }} -t ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
           docker push ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
+    
+      # - name: Build
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ${{ env.fe_backoffice_working_dir }}
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+      #     file: ${{ env.fe_backoffice_dockerfile }}
+      #     push: true
+      #     build-args: PROJECT_DIR=${{ env.fe_backoffice_project_dir }}
+      #     tags: latest
