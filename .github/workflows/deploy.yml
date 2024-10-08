@@ -25,7 +25,8 @@ env:
   fe_backoffice_image_name: ttss-be
   fe_backoffice_image_tag: latest
   fe_backoffice_working_dir: .
-  fe_backoffice_dockerfile: ./apps/backoffice/Dockerfile
+  fe_backoffice_project_dir: apps/backoffice
+  fe_backoffice_dockerfile: ./$fe_backoffice_project_dir/Dockerfile
   
   be_repository: T-T-Software-Solution/meowmeow-be
   be_branch: main
@@ -63,5 +64,5 @@ jobs:
         working-directory: ${{ env.fe_backoffice_working_dir }}
         shell: bash
         run: |
-          docker build -t ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
+          docker build --build-arg PROJECT_DIR=${{ env.fe_backoffice_project_dir }} -t ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
           docker push ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
