@@ -11,6 +11,8 @@ env:
   container_registry_server: ${{ vars.ACR_SERVER_NAME }}.azurecr.io
   container_registry_username: ${{ vars.ACR_SERVER_NAME }}
   container_registry_password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+  container_app_revision_suffix: gh-actions-${{ github.run_id }}-${{ github.run_attempt }}
+
   IMAGE_NAME: ${{ github.repository }}
 
   fe_web_repository: T-T-Software-Solution/ttss-fe-mono
@@ -24,9 +26,12 @@ env:
   fe_backoffice_branch: feature/edit-inline-table.dockerfile
   fe_backoffice_image_name: ttss-be
   fe_backoffice_image_tag: latest
+  fe_backoffice_image: $container_registry_server/$fe_backoffice_image_name:$fe_backoffice_image_tag
   fe_backoffice_working_dir: .
   fe_backoffice_project_dir: apps/backoffice
   fe_backoffice_dockerfile: ./$fe_backoffice_project_dir/Dockerfile
+  fe_backoffice_container_app_name: fe-backoffice
+  fe_backoffice_container_app_resource_group: demo-source-gen
   
   be_repository: T-T-Software-Solution/meowmeow-be
   be_branch: main
@@ -64,8 +69,8 @@ jobs:
         working-directory: ${{ env.fe_backoffice_working_dir }}
         shell: bash
         run: |
-          docker build --build-arg PROJECT_DIR=${{ env.fe_backoffice_project_dir }} -t ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }} -f ${{ env.fe_backoffice_dockerfile }} .
-          docker push ${{ env.container_registry_server }}/${{ env.fe_backoffice_image_name }}:${{ env.fe_backoffice_image_tag }}
+          docker build --build-arg PROJECT_DIR=${{ env.fe_backoffice_project_dir }} -t ${{ env.fe_backoffice_image }} -f ${{ env.fe_backoffice_dockerfile }} .
+          docker push ${{ env.fe_backoffice_image }}
     
       # - name: Build
       #   uses: docker/build-push-action@v5
@@ -77,3 +82,25 @@ jobs:
       #     push: true
       #     build-args: PROJECT_DIR=${{ env.fe_backoffice_project_dir }}
       #     tags: latest
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image
+    steps:
+      - name: Login Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.azure_credential }}
+
+      # Azure CLI 2.52.0 containerapp extension is in preview
+      # Required to install manually
+      - name: Deploy image to Azure Container App with Revision Suffix
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.52.0
+          inlineScript: |
+            az extension add --name containerapp
+            az containerapp update \
+              --name ${{ env.fe_backoffice_container_app_name }} \
+              --resource-group ${{ env.fe_backoffice_container_app_resource_group }} \
+              --image ${{ env.fe_backoffice_image }} \
+              --revision-suffix ${{ env.container_app_revision_suffix }} > ${{ env.fe_backoffice_container_app_name }}.log.txt
