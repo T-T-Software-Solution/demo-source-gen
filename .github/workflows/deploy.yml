@@ -27,16 +27,16 @@ jobs:
       matrix:
         include:
           # Frontend Backoffice
-          # - service_name: Frontend Backoffice
-          #   repository: T-T-Software-Solution/ttss-fe-mono
-          #   branch: feature/edit-inline-table.dockerfile
-          #   image_name: ttss-fe-backoffice
-          #   image_tag: latest
-          #   working_dir: .
-          #   project_dir: apps/backoffice
-          #   dockerfile: ./apps/backoffice/Dockerfile
-          #   container_app_name: fe-backoffice
-          #   container_app_resource_group: demo-source-gen
+          - service_name: Frontend Backoffice
+            repository: T-T-Software-Solution/ttss-fe-mono
+            branch: feature/edit-inline-table.dockerfile
+            image_name: ttss-fe-backoffice
+            image_tag: latest
+            working_dir: .
+            project_dir: apps/backoffice
+            dockerfile: ./apps/backoffice/Dockerfile
+            container_app_name: fe-backoffice
+            container_app_resource_group: demo-source-gen
 
           # Backend API
           - service_name: Backend API
