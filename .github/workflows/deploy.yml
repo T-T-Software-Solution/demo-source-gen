@@ -27,15 +27,27 @@ jobs:
       matrix:
         include:
           # Frontend Backoffice
-          - service_name: Frontend Backoffice
-            repository: T-T-Software-Solution/ttss-fe-mono
-            branch: feature/edit-inline-table.dockerfile
+          # - service_name: Frontend Backoffice
+          #   repository: T-T-Software-Solution/ttss-fe-mono
+          #   branch: feature/edit-inline-table.dockerfile
+          #   image_name: ttss-fe-backoffice
+          #   image_tag: latest
+          #   working_dir: .
+          #   project_dir: apps/backoffice
+          #   dockerfile: ./apps/backoffice/Dockerfile
+          #   container_app_name: fe-backoffice
+          #   container_app_resource_group: demo-source-gen
+
+          # Backend API
+          - service_name: Backend API
+            repository: T-T-Software-Solution/meowmeow-be
+            branch: main
             image_name: ttss-be
             image_tag: latest
             working_dir: .
-            project_dir: apps/backoffice
-            dockerfile: ./apps/backoffice/Dockerfile
-            container_app_name: fe-backoffice
+            project_dir: MeowMeow.Facing
+            dockerfile: ./MeowMeow.Facing/Dockerfile
+            container_app_name: be-api
             container_app_resource_group: demo-source-gen
 
     steps:
@@ -55,7 +67,6 @@ jobs:
           echo "----------------------"
 
           echo "IMAGE=$IMAGE"
-          echo "IMAGE_NAME=$IMAGE_NAME"
           echo "REPOSITORY=${{ matrix.repository }}"
           echo "BRANCH=${{ matrix.branch }}"
           echo "IMAGE_NAME=${{ matrix.image_name }}"
