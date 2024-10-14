@@ -1,3 +1,4 @@
+
 # https://www.thadaw.com/posts/publishing-docker-image-on-git-hub-package-publicly-with-github-actions-6wrk7rh/
 # https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
 name: Deploy
@@ -8,69 +9,53 @@ on:
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
-  container_registry_server: ${{ secrets.ACR_SERVER_NAME }}.azurecr.io
-  container_registry_username: ${{ secrets.ACR_SERVER_NAME }}
+  container_registry_server: ${{ vars.ACR_SERVER_NAME }}.azurecr.io
+  container_registry_username: ${{ vars.ACR_SERVER_NAME }}
   container_registry_password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
   container_app_revision_suffix: gh-actions-${{ github.run_id }}-${{ github.run_attempt }}
+
+  IMAGE_NAME: ${{ github.repository }}
+
+  # Frontend Backoffice
+  fe_backoffice_repository: T-T-Software-Solution/ttss-fe-mono
+  fe_backoffice_branch: feature/edit-inline-table.dockerfile
+  fe_backoffice_image_name: ttss-be
+  fe_backoffice_image_tag: latest
+  fe_backoffice_image: $container_registry_server/$fe_backoffice_image_name:$fe_backoffice_image_tag
+  fe_backoffice_working_dir: .
+  fe_backoffice_project_dir: apps/backoffice
+  fe_backoffice_dockerfile: ./$fe_backoffice_project_dir/Dockerfile
+  fe_backoffice_container_app_name: fe-backoffice
+  fe_backoffice_container_app_resource_group: demo-source-gen
+  
+  # Backend
+  be_repository: T-T-Software-Solution/meowmeow-be
+  be_branch: feature/edit-inline-table.dockerfile
+  be_image_name: ttss-be
+  be_image_tag: latest
+  be_image: $container_registry_server/$fe_backoffice_image_name:$fe_backoffice_image_tag
+  be_working_dir: .
+  be_project_dir: apps/backoffice
+  be_dockerfile: ./$fe_backoffice_project_dir/Dockerfile
+  be_container_app_name: fe-backoffice
+  be_container_app_resource_group: demo-source-gen
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
   build-and-push-image:
-    name: "🚀 Deploy ${{ matrix.service_name }}"
     runs-on: ubuntu-latest
+    if: false
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
       contents: read
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Frontend Backoffice
-          - service_name: Frontend Backoffice
-            repository: T-T-Software-Solution/ttss-fe-mono
-            branch: feature/edit-inline-table.dockerfile
-            image_name: ttss-be
-            image_tag: latest
-            working_dir: .
-            project_dir: apps/backoffice
-            dockerfile: ./apps/backoffice/Dockerfile
-            container_app_name: fe-backoffice
-            container_app_resource_group: demo-source-gen
-
+      # 
     steps:
-      - name: Set an environment variable
-        run: echo "IMAGE=$container_registry_server/${{ matrix.image_name }}:${{ matrix.image_tag }}" >> $GITHUB_ENV
-
-      - name: Running Variables
-        run: |
-          echo "Global Variables"
-          echo "CONTAINER_REGISTRY_SERVER=$container_registry_server"
-          echo "CONTAINER_REGISTRY_USERNAME=$container_registry_username"
-          echo "CONTAINER_REGISTRY_PASSWORD=$container_registry_password"
-          echo "CONTAINER_APP_REVISION_SUFFIX=$container_app_revision_suffix"
-
-          echo "----------------------"
-          echo "Matrix Variables"
-          echo "----------------------"
-
-          echo "IMAGE=$IMAGE"
-          echo "IMAGE_NAME=$IMAGE_NAME"
-          echo "REPOSITORY=${{ matrix.repository }}"
-          echo "BRANCH=${{ matrix.branch }}"
-          echo "IMAGE_NAME=${{ matrix.image_name }}"
-          echo "IMAGE_TAG=${{ matrix.image_tag }}"
-          echo "WORKING_DIR=${{ matrix.working_dir }}"
-          echo "PROJECT_DIR=${{ matrix.project_dir }}"
-          echo "DOCKERFILE=${{ matrix.dockerfile }}"
-          echo "CONTAINER_APP_NAME=${{ matrix.container_app_name }}"
-          echo "CONTAINER_APP_RESOURCE_GROUP=${{ matrix.container_app_resource_group }}"
-
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          repository: ${{ matrix.repository }}
-          ref: ${{ matrix.branch }}
+        with: 
+          repository: ${{ env.fe_backoffice_repository }}
+          ref: ${{ env.fe_backoffice_branch }}
           token: ${{ secrets.GH_TOKEN_THADA_TTSS }}
 
       # Uses the `docker/login-action` action to log in to the Container registry registry using the account and password that will publish the packages. Once published, the packages are scoped to the account defined here.
@@ -82,12 +67,12 @@ jobs:
           password: ${{ env.container_registry_password }}
 
       - name: Build and publish docker image
-        working-directory: ${{ matrix.working_dir }}
+        working-directory: ${{ env.fe_backoffice_working_dir }}
         shell: bash
         run: |
-          docker build --build-arg PROJECT_DIR=${{ matrix.project_dir }} -t ${{ env.IMAGE }} -f ${{ matrix.dockerfile }} .
-          docker push ${{ env.IMAGE }}
-
+          docker build --build-arg PROJECT_DIR=${{ env.fe_backoffice_project_dir }} -t ${{ env.fe_backoffice_image }} -f ${{ env.fe_backoffice_dockerfile }} .
+          docker push ${{ env.fe_backoffice_image }}
+    
       # - name: Build
       #   uses: docker/build-push-action@v5
       #   with:
@@ -99,6 +84,10 @@ jobs:
       #     build-args: PROJECT_DIR=${{ env.fe_backoffice_project_dir }}
       #     tags: latest
 
+  deploy-be-office:
+    runs-on: ubuntu-latest
+    needs: build-and-push-image
+    steps:
       - name: Login Azure
         uses: azure/login@v1
         with:
@@ -113,7 +102,7 @@ jobs:
           inlineScript: |
             az extension add --name containerapp
             az containerapp update \
-              --name ${{ matrix.container_app_name }} \
-              --resource-group ${{ matrix.container_app_resource_group }} \
-              --image ${{ env.IMAGE }} \
-              --revision-suffix ${{ env.container_app_revision_suffix }} > ${{ matrix.container_app_name }}.log.txt
+              --name ${{ env.fe_backoffice_container_app_name }} \
+              --resource-group ${{ env.fe_backoffice_container_app_resource_group }} \
+              --image ${{ env.fe_backoffice_image }} \
+              --revision-suffix ${{ env.container_app_revision_suffix }} > ${{ env.fe_backoffice_container_app_name }}.log.txt
