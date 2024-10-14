@@ -15,13 +15,7 @@ env:
 
   IMAGE_NAME: ${{ github.repository }}
 
-  fe_web_repository: T-T-Software-Solution/ttss-fe-mono
-  fe_web_branch: main
-  fe_web_image_name: ttss-fe-web
-  fe_web_image_tag: latest
-  fe_web_working_dir: .
-  fe_web_dockerfile: ./apps/web/Dockerfile
-
+  # Frontend Backoffice
   fe_backoffice_repository: T-T-Software-Solution/ttss-fe-mono
   fe_backoffice_branch: feature/edit-inline-table.dockerfile
   fe_backoffice_image_name: ttss-be
@@ -33,17 +27,23 @@ env:
   fe_backoffice_container_app_name: fe-backoffice
   fe_backoffice_container_app_resource_group: demo-source-gen
   
+  # Backend
   be_repository: T-T-Software-Solution/meowmeow-be
-  be_branch: main
+  be_branch: feature/edit-inline-table.dockerfile
   be_image_name: ttss-be
   be_image_tag: latest
+  be_image: $container_registry_server/$fe_backoffice_image_name:$fe_backoffice_image_tag
   be_working_dir: .
-  be_dockerfile: ./Dockerfile
+  be_project_dir: apps/backoffice
+  be_dockerfile: ./$fe_backoffice_project_dir/Dockerfile
+  be_container_app_name: fe-backoffice
+  be_container_app_resource_group: demo-source-gen
 
 # There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    if: false
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
       contents: read
@@ -82,7 +82,8 @@ jobs:
       #     push: true
       #     build-args: PROJECT_DIR=${{ env.fe_backoffice_project_dir }}
       #     tags: latest
-  deploy:
+
+  deploy-be-office:
     runs-on: ubuntu-latest
     needs: build-and-push-image
     steps:
