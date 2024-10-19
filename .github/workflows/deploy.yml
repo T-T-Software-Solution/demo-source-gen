@@ -29,7 +29,7 @@ jobs:
           # Frontend Backoffice
           - service_name: Frontend Backoffice
             repository: T-T-Software-Solution/ttss-fe-mono
-            branch: thada-ttss-patch-1
+            branch: main
             image_name: ttss-fe-backoffice
             image_tag: latest
             working_dir: .
